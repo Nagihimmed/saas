@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Admin Panel Prototype</title>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; /* slate-100 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* slate-400 */
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex h-screen overflow-hidden">
+
+    <!-- Super Admin Navigation Sidebar -->
+    <aside class="w-64 bg-white shadow-xl flex flex-col p-4">
+        <div class="flex-grow">
+            <div class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Admin Panel</div>
+            <nav class="space-y-2">
+                <a href="#" id="nav-restaurants" class="flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 8h.01M9 12h.01M9 16h.01M16 8h.01M16 12h.01"></path>
+                    </svg>
+                    Restaurants
+                </a>
+                <a href="#" id="nav-plans" class="flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Plan Management
+                </a>
+                <a href="#" id="nav-payouts" class="flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.485 0-4.5 2.015-4.5 4.5S9.515 17 12 17s4.5-2.015 4.5-4.5S14.485 8 12 8z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.5 12h.01M6.5 12h.01M12 5.5V5m0 13v.5"></path>
+                    </svg>
+                    Payouts
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col p-6 overflow-auto relative">
+        <!-- Impersonation Banner (Hidden by default) -->
+        <div id="impersonation-banner" class="bg-red-600 text-white p-3 text-center font-semibold text-sm rounded-lg shadow-xl mb-4 hidden">
+            You are currently impersonating <span id="impersonated-user-name"></span>. <a href="#" id="exit-impersonation-btn" class="underline hover:text-red-100 transition-colors duration-200">Click here to exit.</a>
+        </div>
+        
+        <!-- Notification Pop-up (Hidden by default) -->
+        <div id="notification" class="absolute top-6 right-6 p-4 rounded-lg shadow-lg text-white font-medium transition-transform duration-300 transform translate-x-full z-50"></div>
+
+        <!-- Pages Container -->
+        <div id="pages-container" class="flex-1 overflow-auto">
+
+            <!-- 1. All Restaurants Page (Initial View) -->
+            <div id="restaurants-page" class="page-content bg-white shadow-xl rounded-xl p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-slate-800">Restaurant Tenants</h1>
+                    <button id="add-restaurant-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        + Add New Restaurant
+                    </button>
+                </div>
+
+                <!-- Search and Filter/Sort Controls -->
+                <div class="flex items-center space-x-4 mb-6">
+                    <input type="text" id="restaurant-search" placeholder="Search by name or subdomain..." class="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="status-filter" class="p-3 border border-slate-300 rounded-lg">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Suspended">Suspended</option>
+                    </select>
+                    <select id="billing-status-filter" class="p-3 border border-slate-300 rounded-lg">
+                        <option value="">All Billing</option>
+                        <option value="Active">Active</option>
+                        <option value="Trial">Trial</option>
+                        <option value="Past Due">Past Due</option>
+                    </select>
+                </div>
+                
+                <!-- Restaurants Table -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="brandName">Restaurant Brand Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="subdomain">Subdomain</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="status">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="plan">Plan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="billingStatus">Billing Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="nextBillingDate">Next Billing Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable" data-sort="creationDate">Creation Date</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="restaurants-table-body" class="bg-white divide-y divide-slate-200">
+                            <!-- Table rows will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination (Placeholder) -->
+                <div class="mt-6 flex justify-between items-center text-sm text-slate-600">
+                    <div>Showing <span id="start-item">1</span> to <span id="end-item">10</span> of <span id="total-items">50</span> results</div>
+                    <div class="space-x-2">
+                        <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-100">Previous</button>
+                        <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-100">Next</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Onboarding Form Page -->
+            <div id="onboarding-form-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8 max-w-2xl mx-auto">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Onboard New Restaurant</h2>
+                    <form id="onboarding-form">
+                        <!-- Step 1: Restaurant Details -->
+                        <div id="step-1" class="step">
+                            <h3 class="text-lg font-semibold mb-4">1. Restaurant & Subdomain</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Restaurant Brand Name</label>
+                                    <input type="text" id="brand-name" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Subdomain</label>
+                                    <div class="mt-1 flex rounded-md shadow-sm">
+                                        <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">
+                                            https://
+                                        </span>
+                                        <input type="text" id="subdomain" required class="flex-1 block w-full rounded-none rounded-r-md border-slate-300 p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">
+                                            .saas-platform.com
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-6">
+                                <button type="button" id="next-step-1" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700">Next</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Admin Details -->
+                        <div id="step-2" class="step hidden">
+                            <h3 class="text-lg font-semibold mb-4">2. Primary Admin Details</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Full Name</label>
+                                    <input type="text" id="admin-name" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Email</label>
+                                    <input type="email" id="admin-email" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Temporary Password</label>
+                                    <input type="text" id="admin-password" value="tempPass123!" readonly class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 bg-slate-100">
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prev-step-2" class="px-6 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">Previous</button>
+                                <button type="button" id="next-step-2" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700">Next</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Tenancy & Subscription -->
+                        <div id="step-3" class="step hidden">
+                            <h3 class="text-lg font-semibold mb-4">3. Database & Subscription</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Database Tenancy Model</label>
+                                    <select id="tenancy-model" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="dedicated">Dedicated Database</option>
+                                        <option value="shared">Shared Database</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Initial Subscription Plan</label>
+                                    <select id="subscription-plan" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <!-- Options will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                <button type="button" id="prev-step-3" class="px-6 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">Previous</button>
+                                <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700">Submit & Onboard</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. Edit Restaurant Page -->
+            <div id="edit-restaurant-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8 max-w-3xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800" id="edit-restaurant-title">Editing Restaurant: </h2>
+                        <button id="back-to-restaurants-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">← Back to List</button>
+                    </div>
+                    
+                    <form id="edit-restaurant-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Restaurant Brand Name</label>
+                                <input type="text" id="edit-brand-name" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 bg-slate-100" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Subdomain (Read-Only)</label>
+                                <input type="text" id="edit-subdomain" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 bg-slate-100" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Database Tenancy Model (Read-Only)</label>
+                                <input type="text" id="edit-tenancy-model" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 bg-slate-100" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Creation Date (Read-Only)</label>
+                                <input type="text" id="edit-creation-date" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 bg-slate-100" readonly>
+                            </div>
+                        </div>
+
+                        <hr class="my-6">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Assigned Subscription Plan</label>
+                                <select id="edit-subscription-plan" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Status</label>
+                                <select id="edit-status" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Suspended">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4">
+                            <button type="button" id="impersonate-btn" class="px-6 py-2 bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-600 transition-colors duration-200">
+                                Impersonate Admin
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. Plan Management Page -->
+            <div id="plan-management-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8">
+                    <h1 class="text-2xl font-bold text-slate-800 mb-6">Plan Management</h1>
+                    
+                    <div class="flex justify-end mb-6">
+                         <button id="add-plan-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                            + Create New Plan
+                        </button>
+                    </div>
+
+                    <div id="plan-list-container" class="space-y-4">
+                        <!-- Plan cards will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Create Plan Form (Modal-like) -->
+            <div id="create-plan-form-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8 max-w-xl mx-auto">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Create New Plan</h2>
+                    <form id="create-plan-form">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Plan Name</label>
+                                <input type="text" id="plan-name" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Price (SAR)</label>
+                                    <input type="number" id="plan-price" required min="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Billing Cycle</label>
+                                    <select id="billing-cycle" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="monthly">Monthly</option>
+                                        <option value="annually">Annually</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Feature Entitlements</label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="feature" value="maxBranches" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>Maximum number of branches</span>
+                                        <input type="number" id="max-branches" class="ml-2 w-20 rounded-md border-slate-300 shadow-sm p-1 text-sm">
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="feature" value="maxUsers" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>Maximum number of user accounts</span>
+                                        <input type="number" id="max-users" class="ml-2 w-20 rounded-md border-slate-300 shadow-sm p-1 text-sm">
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="feature" value="loyaltyProgram" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>Access to Loyalty Program module</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="feature" value="whatsappCampaign" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>Access to WhatsApp Campaign module</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" name="feature" value="whatsappMessages" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>Number of monthly WhatsApp messages included</span>
+                                        <input type="number" id="whatsapp-messages" class="ml-2 w-20 rounded-md border-slate-300 shadow-sm p-1 text-sm">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-6 space-x-4">
+                            <button type="button" id="cancel-plan-btn" class="px-6 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">Cancel</button>
+                            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700">Save Plan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 6. Payouts Page -->
+            <div id="payouts-page" class="page-content hidden">
+                 <div class="bg-white shadow-xl rounded-xl p-8">
+                    <h1 class="text-2xl font-bold text-slate-800 mb-6">Payout Management</h1>
+
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-slate-600 text-sm">Current platform-wide payable balance: <span class="font-bold text-green-600">SAR 15,350.50</span></span>
+                        <button id="initiate-payout-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                            Initiate Payout
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Restaurant Brand Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Current Payable Balance (SAR)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Select</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payouts-table-body" class="bg-white divide-y divide-slate-200">
+                                <!-- Payout rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- 7. Billing History Page (for a specific restaurant) -->
+            <div id="billing-history-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Billing History for <span id="billing-history-title"></span></h2>
+                        <button id="back-to-details-btn" class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">← Back to Details</button>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Invoice ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transaction Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount (SAR)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billing-history-table-body" class="bg-white divide-y divide-slate-200">
+                                <!-- Billing history rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 8. Restaurant Admin Panel (Impersonation View) -->
+            <div id="admin-panel-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8">
+                    <div class="text-center">
+                        <h1 class="text-3xl font-bold text-indigo-600 mb-2">Restaurant Admin Panel</h1>
+                        <p class="text-xl text-slate-600">Simulating the view for <span id="admin-panel-user"></span></p>
+                        <div class="mt-8 p-6 bg-slate-100 rounded-xl border border-slate-200 text-slate-700">
+                            <h3 class="text-lg font-semibold mb-2">Account Management</h3>
+                            <div class="text-left text-sm space-y-2">
+                                <p>You can view and update your IBAN for payouts in the settings section. This data is securely encrypted.</p>
+                                <div class="flex items-center space-x-2">
+                                    <label class="font-medium">IBAN:</label>
+                                    <input type="text" value="SAxx xxxx xxxx xxxx xxxx xxxx" class="flex-1 p-2 border rounded-md bg-white">
+                                    <button class="px-4 py-1 text-sm bg-indigo-500 text-white rounded-lg">Update</button>
+                                </div>
+                                <p>This section would also show a history of all payouts received.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. Payouts Report View (Modal-like) -->
+            <div id="payout-report-page" class="page-content hidden">
+                <div class="bg-white shadow-xl rounded-xl p-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Payout Report for Batch</h2>
+                    <p class="text-sm text-slate-500 mb-6">A CSV-compatible report for external mass payout systems.</p>
+                    <div class="bg-slate-100 p-4 rounded-lg font-mono text-sm overflow-auto max-h-96">
+                        <pre id="payout-report-content"></pre>
+                    </div>
+                    <div class="flex justify-between mt-6">
+                        <button id="close-payout-report-btn" class="px-6 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100">Close</button>
+                        <button id="mark-payouts-completed-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700">Mark Selected as Completed</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Data Mockup (simulating a database) ---
+        let restaurants = [
+            { id: 1, brandName: "The Burger Joint", subdomain: "burgerjoint", status: "Active", plan: "Professional", creationDate: "2024-01-15", billingStatus: "Active", nextBillingDate: "2025-09-01", payableBalance: 5350.50, adminName: "John Doe" },
+            { id: 2, brandName: "Taco Fiesta", subdomain: "tacofiesta", status: "Active", plan: "Basic", creationDate: "2024-03-22", billingStatus: "Trial", nextBillingDate: "2025-09-25", payableBalance: 2500.00, adminName: "Jane Smith" },
+            { id: 3, brandName: "Pizza Palace", subdomain: "pizzapalace", status: "Suspended", plan: "Professional", creationDate: "2024-05-10", billingStatus: "Past Due", nextBillingDate: "2025-08-10", payableBalance: 0, adminName: "Peter Jones" },
+            { id: 4, brandName: "Sushi Zen", subdomain: "sushizen", status: "Active", plan: "Enterprise", creationDate: "2024-06-01", billingStatus: "Active", nextBillingDate: "2025-09-01", payableBalance: 7500.00, adminName: "Akira Tanaka" },
+            { id: 5, brandName: "Café Bliss", subdomain: "cafebliss", status: "Inactive", plan: "Basic", creationDate: "2024-07-05", billingStatus: "Inactive", nextBillingDate: "N/A", payableBalance: 0, adminName: "Sarah Connor" },
+            { id: 6, brandName: "Green Bowl Salads", subdomain: "greenbowl", status: "Active", plan: "Basic", creationDate: "2024-08-01", billingStatus: "Active", nextBillingDate: "2025-09-01", payableBalance: 0, adminName: "Mark Johnson" },
+        ];
+
+        let plans = [
+            { id: 1, name: "Basic", price: 199, billingCycle: "Monthly", active: true, entitlements: { maxBranches: 1, maxUsers: 5, loyaltyProgram: false, whatsappCampaign: false } },
+            { id: 2, name: "Professional", price: 499, billingCycle: "Monthly", active: true, entitlements: { maxBranches: 5, maxUsers: 25, loyaltyProgram: true, whatsappCampaign: false } },
+            { id: 3, name: "Enterprise", price: 1999, billingCycle: "Annually", active: true, entitlements: { maxBranches: 99, maxUsers: 999, loyaltyProgram: true, whatsappCampaign: true, whatsappMessages: 5000 } },
+            { id: 4, name: "Legacy", price: 100, billingCycle: "Monthly", active: false, entitlements: {} }
+        ];
+
+        let currentRestaurantId = null;
+        let isImpersonating = false;
+        let originalPageId = "restaurants-page";
+        let sortColumn = null;
+        let sortDirection = 'asc';
+
+        // --- Utility Functions ---
+
+        /**
+         * Hides all pages and shows the one with the given ID.
+         * @param {string} pageId The ID of the page to show.
+         */
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+        };
+
+        /**
+         * Displays a temporary notification.
+         * @param {string} message The message to display.
+         * @param {string} type The type of notification ('success' or 'error').
+         */
+        const showNotification = (message, type = 'success') => {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `absolute top-6 right-6 p-4 rounded-lg shadow-lg text-white font-medium transition-transform duration-300 transform translate-x-0 z-50 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+            }, 3000);
+        };
+
+        /**
+         * Renders the status tag with the correct color.
+         * @param {string} status The status text.
+         * @returns {string} The HTML for the status tag.
+         */
+        const getStatusTag = (status) => {
+            let color;
+            switch (status) {
+                case 'Active':
+                    color = 'bg-green-100 text-green-800';
+                    break;
+                case 'Trial':
+                    color = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'Suspended':
+                    color = 'bg-red-100 text-red-800';
+                    break;
+                case 'Past Due':
+                    color = 'bg-red-100 text-red-800';
+                    break;
+                case 'Inactive':
+                    color = 'bg-slate-100 text-slate-800';
+                    break;
+                default:
+                    color = 'bg-slate-100 text-slate-800';
+            }
+            return `<span class="px-2 py-1 text-xs font-semibold rounded-full ${color}">${status}</span>`;
+        };
+        
+        /**
+         * Renders the main restaurants table.
+         * @param {Array} data The restaurant data to display.
+         */
+        const renderRestaurantsTable = (data) => {
+            const tableBody = document.getElementById('restaurants-table-body');
+            tableBody.innerHTML = ''; // Clear existing rows
+            const sortedData = data.sort((a, b) => {
+                if (!sortColumn) return 0;
+                const aValue = a[sortColumn];
+                const bValue = b[sortColumn];
+                if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            sortedData.forEach(restaurant => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 transition-colors duration-100';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${restaurant.brandName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${restaurant.subdomain}.saas-platform.com</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusTag(restaurant.status)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${restaurant.plan}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusTag(restaurant.billingStatus)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${restaurant.nextBillingDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${restaurant.creationDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button onclick="editRestaurant(${restaurant.id})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                        <button onclick="viewBillingHistory(${restaurant.id}, '${restaurant.brandName}')" class="text-slate-600 hover:text-slate-900">View Details</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        };
+        
+        /**
+         * Filters and sorts the restaurants table based on user input.
+         */
+        const filterAndSortRestaurants = () => {
+            const searchQuery = document.getElementById('restaurant-search').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const billingStatusFilter = document.getElementById('billing-status-filter').value;
+            
+            const filteredData = restaurants.filter(r => {
+                const matchesSearch = r.brandName.toLowerCase().includes(searchQuery) || r.subdomain.toLowerCase().includes(searchQuery);
+                const matchesStatus = statusFilter === '' || r.status === statusFilter;
+                const matchesBilling = billingStatusFilter === '' || r.billingStatus === billingStatusFilter;
+                return matchesSearch && matchesStatus && matchesBilling;
+            });
+            renderRestaurantsTable(filteredData);
+        };
+        
+        // --- Page Navigation and Event Handlers ---
+
+        document.getElementById('nav-restaurants').addEventListener('click', () => {
+            showPage('restaurants-page');
+            filterAndSortRestaurants();
+        });
+        document.getElementById('nav-plans').addEventListener('click', () => {
+            showPage('plan-management-page');
+            renderPlans();
+        });
+        document.getElementById('nav-payouts').addEventListener('click', () => {
+            showPage('payouts-page');
+            renderPayoutsTable();
+        });
+
+        // Event listener for search and filter inputs
+        document.getElementById('restaurant-search').addEventListener('input', filterAndSortRestaurants);
+        document.getElementById('status-filter').addEventListener('change', filterAndSortRestaurants);
+        document.getElementById('billing-status-filter').addEventListener('change', filterAndSortRestaurants);
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const newSortColumn = e.target.dataset.sort;
+                if (sortColumn === newSortColumn) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = newSortColumn;
+                    sortDirection = 'asc';
+                }
+                filterAndSortRestaurants();
+            });
+        });
+
+        // --- User Story 1 & 2: Onboarding & Viewing Restaurants ---
+        
+        // Populate the subscription plan dropdown on load
+        const populatePlanDropdowns = () => {
+            const planSelects = document.querySelectorAll('#subscription-plan, #edit-subscription-plan');
+            planSelects.forEach(select => {
+                select.innerHTML = ''; // Clear existing options
+                const activePlans = plans.filter(p => p.active);
+                activePlans.forEach(plan => {
+                    const option = document.createElement('option');
+                    option.value = plan.name;
+                    option.textContent = `${plan.name} (${plan.billingCycle})`;
+                    select.appendChild(option);
+                });
+            });
+        };
+
+        // Onboarding Form Logic
+        let currentStep = 1;
+        const onboardingForm = document.getElementById('onboarding-form');
+
+        document.getElementById('add-restaurant-btn').addEventListener('click', () => {
+            showPage('onboarding-form-page');
+            // Reset form and show step 1
+            onboardingForm.reset();
+            currentStep = 1;
+            document.getElementById('step-1').classList.remove('hidden');
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.add('hidden');
+        });
+
+        document.getElementById('next-step-1').addEventListener('click', () => {
+            const brandName = document.getElementById('brand-name').value.trim();
+            const subdomain = document.getElementById('subdomain').value.trim();
+            if (!brandName || !subdomain) {
+                showNotification("Please fill in all fields.", "error");
+                return;
+            }
+            if (restaurants.some(r => r.subdomain === subdomain)) {
+                showNotification("Subdomain is already taken.", "error");
+                return;
+            }
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            currentStep = 2;
+        });
+
+        document.getElementById('prev-step-2').addEventListener('click', () => {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
+            currentStep = 1;
+        });
+        
+        document.getElementById('next-step-2').addEventListener('click', () => {
+            const adminName = document.getElementById('admin-name').value.trim();
+            const adminEmail = document.getElementById('admin-email').value.trim();
+            if (!adminName || !adminEmail) {
+                showNotification("Please fill in all admin details.", "error");
+                return;
+            }
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.remove('hidden');
+            currentStep = 3;
+        });
+
+        document.getElementById('prev-step-3').addEventListener('click', () => {
+            document.getElementById('step-3').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            currentStep = 2;
+        });
+
+        onboardingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newRestaurant = {
+                id: restaurants.length + 1,
+                brandName: document.getElementById('brand-name').value,
+                subdomain: document.getElementById('subdomain').value,
+                status: "Active",
+                plan: document.getElementById('subscription-plan').value,
+                creationDate: new Date().toISOString().slice(0, 10),
+                billingStatus: "Trial",
+                nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().slice(0, 10),
+                payableBalance: 0,
+                adminName: document.getElementById('admin-name').value,
+            };
+            restaurants.push(newRestaurant);
+            showPage('restaurants-page');
+            filterAndSortRestaurants();
+            showNotification(`New restaurant "${newRestaurant.brandName}" onboarded successfully!`);
+        });
+
+        // --- User Story 3 & 4: Editing & Impersonation ---
+        
+        /**
+         * Populates and shows the edit restaurant page.
+         * @param {number} id The ID of the restaurant to edit.
+         */
+        const editRestaurant = (id) => {
+            currentRestaurantId = id;
+            const restaurant = restaurants.find(r => r.id === id);
+            if (!restaurant) return;
+
+            document.getElementById('edit-restaurant-title').textContent = `Editing Restaurant: ${restaurant.brandName}`;
+            document.getElementById('edit-brand-name').value = restaurant.brandName;
+            document.getElementById('edit-subdomain').value = restaurant.subdomain;
+            document.getElementById('edit-tenancy-model').value = restaurant.tenancyModel || 'dedicated'; // Mock data
+            document.getElementById('edit-creation-date').value = restaurant.creationDate;
+            document.getElementById('edit-subscription-plan').value = restaurant.plan;
+            document.getElementById('edit-status').value = restaurant.status;
+
+            showPage('edit-restaurant-page');
+        };
+
+        document.getElementById('back-to-restaurants-btn').addEventListener('click', () => {
+            showPage('restaurants-page');
+        });
+
+        document.getElementById('edit-restaurant-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const restaurant = restaurants.find(r => r.id === currentRestaurantId);
+            if (!restaurant) return;
+            
+            restaurant.plan = document.getElementById('edit-subscription-plan').value;
+            restaurant.status = document.getElementById('edit-status').value;
+
+            showPage('restaurants-page');
+            filterAndSortRestaurants();
+            showNotification(`Restaurant "${restaurant.brandName}" updated successfully.`);
+        });
+
+        document.getElementById('impersonate-btn').addEventListener('click', () => {
+            const restaurant = restaurants.find(r => r.id === currentRestaurantId);
+            if (!restaurant) return;
+
+            isImpersonating = true;
+            document.getElementById('impersonation-banner').classList.remove('hidden');
+            document.getElementById('impersonated-user-name').textContent = restaurant.adminName;
+            
+            // Switch to a simulated Admin Panel view
+            showPage('admin-panel-page');
+            document.getElementById('admin-panel-user').textContent = restaurant.adminName;
+            originalPageId = 'edit-restaurant-page'; // Store the original page to return to
+        });
+
+        document.getElementById('exit-impersonation-btn').addEventListener('click', () => {
+            isImpersonating = false;
+            document.getElementById('impersonation-banner').classList.add('hidden');
+            showPage(originalPageId);
+            showNotification(`Exited impersonation mode.`);
+        });
+
+        // --- User Story 5: Defining Subscription Plans ---
+        
+        document.getElementById('add-plan-btn').addEventListener('click', () => {
+            document.getElementById('create-plan-form').reset();
+            showPage('create-plan-form-page');
+        });
+
+        document.getElementById('cancel-plan-btn').addEventListener('click', () => {
+            showPage('plan-management-page');
+        });
+
+        const renderPlans = () => {
+            const container = document.getElementById('plan-list-container');
+            container.innerHTML = '';
+            plans.forEach(plan => {
+                const planCard = document.createElement('div');
+                planCard.className = `p-6 rounded-lg shadow-md border ${plan.active ? 'border-green-200' : 'border-slate-200 bg-slate-50'}`;
+                const entitlementsHtml = Object.keys(plan.entitlements).map(key => {
+                    const value = plan.entitlements[key];
+                    if (typeof value === 'boolean') {
+                        return `<span class="inline-block bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${key}</span>`;
+                    }
+                    return `<span class="inline-block bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${key}: ${value}</span>`;
+                }).join(' ');
+
+                planCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-slate-800">${plan.name}</h3>
+                        ${plan.active ? getStatusTag('Active') : getStatusTag('Inactive')}
+                    </div>
+                    <p class="text-slate-600">Price: <span class="font-semibold text-green-600">SAR ${plan.price.toLocaleString()}</span> / ${plan.billingCycle}</p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        ${entitlementsHtml}
+                    </div>
+                `;
+                container.appendChild(planCard);
+            });
+        };
+
+        document.getElementById('create-plan-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const entitlements = {};
+            document.querySelectorAll('#create-plan-form input[type="checkbox"]:checked').forEach(checkbox => {
+                const key = checkbox.value;
+                const input = document.getElementById(key.replace('loyaltyProgram', 'loyaltyProgram').replace('whatsappCampaign', 'whatsappCampaign'));
+                if (input && input.type === 'number') {
+                    entitlements[key] = parseInt(input.value, 10);
+                } else {
+                    entitlements[key] = true;
+                }
+            });
+
+            const newPlan = {
+                id: plans.length + 1,
+                name: document.getElementById('plan-name').value,
+                price: parseFloat(document.getElementById('plan-price').value),
+                billingCycle: document.getElementById('billing-cycle').value,
+                active: true,
+                entitlements: entitlements,
+            };
+            plans.push(newPlan);
+            populatePlanDropdowns();
+            renderPlans();
+            showPage('plan-management-page');
+            showNotification(`New plan "${newPlan.name}" created successfully.`);
+        });
+
+        // --- User Story 6 & 7: Billing Status & History ---
+        
+        /**
+         * Populates and shows the billing history page.
+         * @param {number} id The ID of the restaurant.
+         * @param {string} brandName The name of the restaurant.
+         */
+        const viewBillingHistory = (id, brandName) => {
+            currentRestaurantId = id;
+            document.getElementById('billing-history-title').textContent = brandName;
+            
+            const historyTableBody = document.getElementById('billing-history-table-body');
+            historyTableBody.innerHTML = `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">INV-98765</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">2025-08-01</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Subscription for Professional Plan - August 2025</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">SAR 499.00</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusTag('Paid')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button class="text-indigo-600 hover:text-indigo-900">Download PDF</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">INV-87654</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">2025-07-01</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Subscription for Professional Plan - July 2025</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">SAR 499.00</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusTag('Paid')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button class="text-indigo-600 hover:text-indigo-900">Download PDF</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">INV-76543</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">2025-06-01</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Subscription for Professional Plan - June 2025</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">SAR 499.00</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusTag('Failed')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button class="text-red-600 hover:text-red-900" disabled>Download PDF</button>
+                    </td>
+                </tr>
+            `;
+            showPage('billing-history-page');
+        };
+
+        document.getElementById('back-to-details-btn').addEventListener('click', () => {
+            editRestaurant(currentRestaurantId);
+        });
+
+        // --- User Story 32: Payout Management ---
+
+        const renderPayoutsTable = () => {
+            const tableBody = document.getElementById('payouts-table-body');
+            tableBody.innerHTML = '';
+            restaurants.forEach(restaurant => {
+                if (restaurant.payableBalance > 0) {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition-colors duration-100';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${restaurant.brandName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">SAR ${restaurant.payableBalance.toLocaleString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <input type="checkbox" data-id="${restaurant.id}" class="rounded text-indigo-600 focus:ring-indigo-500">
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        };
+
+        document.getElementById('initiate-payout-btn').addEventListener('click', () => {
+            const selectedRestaurants = Array.from(document.querySelectorAll('#payouts-table-body input[type="checkbox"]:checked')).map(cb => {
+                return restaurants.find(r => r.id === parseInt(cb.dataset.id));
+            });
+
+            if (selectedRestaurants.length === 0) {
+                showNotification('Please select at least one restaurant to initiate a payout.', 'error');
+                return;
+            }
+
+            const reportContent = `Restaurant Name,Payout Amount (SAR),IBAN\n` + selectedRestaurants.map(r => {
+                // Mock IBAN for the report
+                return `${r.brandName},${r.payableBalance},SAxx xxxx xxxx xxxx xxxx xxxx`;
+            }).join('\n');
+            
+            document.getElementById('payout-report-content').textContent = reportContent;
+            showPage('payout-report-page');
+        });
+
+        document.getElementById('close-payout-report-btn').addEventListener('click', () => {
+            showPage('payouts-page');
+        });
+
+        document.getElementById('mark-payouts-completed-btn').addEventListener('click', () => {
+             Array.from(document.querySelectorAll('#payouts-table-body input[type="checkbox"]:checked')).forEach(cb => {
+                const restaurant = restaurants.find(r => r.id === parseInt(cb.dataset.id));
+                if (restaurant) {
+                    restaurant.payableBalance = 0; // Mark as paid
+                }
+            });
+            showPage('payouts-page');
+            renderPayoutsTable();
+            showNotification('Payouts successfully marked as completed!');
+        });
+        
+        // Initial page load
+        document.addEventListener('DOMContentLoaded', () => {
+            populatePlanDropdowns();
+            filterAndSortRestaurants();
+            showPage('restaurants-page');
+        });
+    </script>
+</body>
+</html>
